@@ -1,5 +1,6 @@
 <!-- editor wrap area -->
-<button (click)="test()">test</button>
-<codemirror [config]="config"
-            (keyup)="editorKeyEvent($event)"
+<button (click)="inputTextTest()">inputText</button>
+<button (click)="selectAllTest()">readOnly</button>
+<button (click)="changeLineNumber()">hint 추가</button>
+<codemirror (keyup)="editorKeyEvent($event)"
             [value]="value"><codemirror>

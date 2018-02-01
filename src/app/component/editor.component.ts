@@ -41,14 +41,25 @@ export class EditorComponent implements AfterViewInit, OnDestroy {
    */
   private MODE: string = 'text/x-sql';
 
-  @Input() config;
-  @Output() change = new EventEmitter();
+  /**
+   * 초기 옵션
+   * @type {{mode: string; indentWithTabs: boolean; smartIndent: boolean; lineNumbers: boolean; matchBrackets: boolean; autofocus: boolean; extraKeys: {Ctrl-Space: string}}}
+   */
+  private config = {
+    mode: this.MODE,
+    indentWithTabs: true,
+    smartIndent: true,
+    lineNumbers: true,
+    matchBrackets : true,
+    autofocus: true,
+    // {}에 옵션 추가할경우, 로 넣을것, []아님
+    extraKeys: {"Ctrl-Space": "autocomplete"},
+  };
+
 
   @ViewChild('host') host;
 
   @Output() editor = null;
-
-  _value = '';
 
   /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
    | Private Variables
@@ -74,9 +85,10 @@ export class EditorComponent implements AfterViewInit, OnDestroy {
    */
   constructor() {}
 
+  // 초기값 설정
   @Input() set value(v) {
-    if (v !== this._value) {
-      this._value = v;
+    if (v !== this.text) {
+      this.text = v;
       this.onChange(v);
     }
   }
@@ -96,13 +108,73 @@ export class EditorComponent implements AfterViewInit, OnDestroy {
    * On component view init
    */
   ngAfterViewInit() {
-    this.config = this.config || {};
     this.codemirrorInit(this.config);
   }
 
   /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
    | Public Method
    |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
+
+  /**
+   * Initialize codemirror
+   */
+  codemirrorInit(config) {
+    this.editor = CodeMirror.fromTextArea(this.host.nativeElement, config);
+    this.editor.setValue(this.text);
+  }
+
+  onChange(_) {}
+
+  public getTest() {
+
+  }
+
+  /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+   | Public Method - setter
+   |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
+
+  /**
+   * line number 표시
+   * @param isEnabled
+   */
+  public setLineNumber(isEnabled: boolean): void {
+    this.changeOption('lineNumbers', isEnabled);
+  }
+
+  /**
+   * auto focus
+   * @param isEnabled
+   */
+  public setAutoFocus(isEnabled: boolean): void {
+    this.changeOption('autoFocus', isEnabled);
+  }
+
+  /**
+   * read only
+   * @param isEnabled
+   */
+  public setReadOnly(isEnabled: boolean): void {
+    this.changeOption('readOnly', isEnabled);
+  }
+
+  /**
+   * 에디터 refresh
+   */
+  public setRefresh(): void {
+    this.editor.refresh();
+  }
+
+  /**
+   * 키 입력시 하단에 나타날 hint 설정
+   * @param title
+   * @param values
+   * @param valueKey
+   */
+  public setHintOptions(title: string, values: any[], valueKey?: string) {
+    const items = {};
+    items[title] = valueKey ?  this.getHintValues(values, valueKey) : values;
+    this.changeOption('hintOptions', {tables: items})
+  };
 
   /**
    * 에디터 텍스트 입력
@@ -116,35 +188,19 @@ export class EditorComponent implements AfterViewInit, OnDestroy {
   }
 
   /**
-   * Initialize codemirror
+   * 현재 커서부분에 텍스트 입력후 포커스
+   * @param text
    */
-  codemirrorInit(config) {
-    this.editor = CodeMirror.fromTextArea(this.host.nativeElement, config);
-    this.editor.setValue(this._value);
+  public insertText(text: string): void {
+    // text insert
+    this.editor.replaceRange(text, this.getCursor);
+    // focus
+    this.editor.focus();
   }
 
-  /**
-   * Value update process
-   */
-  updateValue(value) {
-    this.value = value;
-    this.onTouched();
-    this.change.emit(value);
-  }
-
-  /**
-   * Implements ControlValueAccessor
-   */
-  writeValue(value) {
-    this._value = value || '';
-    if (this.editor) {
-      this.editor.setValue(this._value);
-    }
-  }
-  onChange(_) {}
-  onTouched() {}
-  registerOnChange(fn) { this.onChange = fn; }
-  registerOnTouched(fn) { this.onTouched = fn; }
+  /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+   | Public Method - getter
+   |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
   /**
    * 모든 텍스트 가져오기
@@ -154,57 +210,10 @@ export class EditorComponent implements AfterViewInit, OnDestroy {
     return this.editor.getValue();
   }
 
-  public getTest() {
-    // this.getFocusSelection();
-    // console.log(this.getSelection);
-    console.log(this.getCursor);
-
-    this.insert('texttse');
-  }
-
-
-
   /**
-   * 현재 커서부분에 텍스트 입력후 포커스
-   * @param text
+   * 현재 커서에서 선택된 아이템 가져오기
+   * @returns {string}
    */
-  public insert(text: string): void {
-    // text insert
-    this.editor.replaceRange(text, this.getCursor);
-    // focus
-    this.editor.focus();
-  }
-
-  /**
-   * 현재 커서 위치 가져오기
-   * @returns {any}
-   */
-  private get getCursor() {
-    return this.editor.getCursor();
-  }
-
-  /**
-   * 현재 에디터의 모든 line 리스트 가져오기
-   * @returns {any|string[]}
-   */
-  private get getLists() {
-    return this.editor.getValue().split('\n');
-  }
-
-  /**
-   * 현재 선택한 아이템 가져오기
-   * @returns {any}
-   */
-  private get getSelection() {
-    return this.editor.getSelection();
-  }
-
-  private setSelection(startPos: any, endPos: any) {
-    this.editor.setSelection(endPos, startPos);
-  }
-
-
-
   public getFocusSelection(): string {
     // 현재 커서
     const cursor = this.getCursor;
@@ -293,5 +302,66 @@ export class EditorComponent implements AfterViewInit, OnDestroy {
       }
     }
     return '';
+  }
+
+
+  /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+   | private Method - getter
+   |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
+
+  /**
+   * 현재 커서 위치 가져오기
+   * @returns {any}
+   */
+  private get getCursor() {
+    return this.editor.getCursor();
+  }
+
+  /**
+   * 현재 에디터의 모든 line 리스트 가져오기
+   * @returns {any|string[]}
+   */
+  private get getLists() {
+    return this.editor.getValue().split('\n');
+  }
+
+  /**
+   * 현재 선택한 아이템 가져오기
+   * @returns {any}
+   */
+  private get getSelection() {
+    return this.editor.getSelection();
+  }
+
+  /**
+   * 에디터에서 블럭 선택
+   * @param startPos
+   * @param endPos
+   */
+  private setSelection(startPos: any, endPos: any) {
+    this.editor.setSelection(endPos, startPos);
+  }
+
+  /**
+   * option 변경
+   * @param optionName
+   * @param value
+   */
+  private changeOption(optionName: string, value: any) {
+    this.editor.setOption(optionName, value);
+  }
+
+  /**
+   * get hint values
+   * @param values
+   * @param key
+   * @returns {Array}
+   */
+  private getHintValues(values: any[], key: string) {
+    const result = [];
+    values.forEach((item) => {
+      result.push(item[key]);
+    });
+    return result;
   }
 }

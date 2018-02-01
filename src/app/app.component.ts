@@ -42,18 +42,31 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /**
-   *
+   * key event
    * @param event
    */
   public editorKeyEvent(event) {
     // 부분 쿼리 실행
-    if (event.altKey && event.keyCode === 13) {
-
-    }
-    // 모든 쿼리 실행
     if (event.ctrlKey && event.keyCode === 13) {
-      this.editor.getTest();
+      this.editor.getFocusSelection();
     }
+  }
+
+
+  public inputTextTest() {
+    this.editor.insertText('testText1');
+  }
+
+  public addLocalListTest() {
+
+  }
+
+  public selectAllTest() {
+    this.editor.setReadOnly(true);
+  }
+
+  public changeLineNumber() {
+    this.editor.setHintOptions('information_schema', [{name: 'ALL_PLUGINS'}, {name: 'PLUGIN_NAME'}, {name:'CLIENT_STATISTICS'}], 'name');
   }
 
   public test() {
