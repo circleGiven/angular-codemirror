@@ -19,9 +19,15 @@
       "testTsconfig": "tsconfig.spec.json",
       "prefix": "app",
       "styles": [
-        "styles.css"
+        "../node_modules/codemirror/lib/codemirror.css",
+        "../node_modules/codemirror/addon/hint/show-hint.css",
+        "../node_modules/codemirror/addon/hint/show-hint.js",
+        "../node_modules/codemirror/addon/hint/sql-hint.js"
       ],
-      "scripts": [],
+      "scripts": [
+        "../node_modules/codemirror/lib/codemirror.js",
+        "../node_modules/codemirror/mode/sql/sql.js"
+      ],
       "environmentSource": "environments/environment.ts",
       "environments": {
         "dev": "environments/environment.ts",
